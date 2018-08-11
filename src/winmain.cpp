@@ -1,4 +1,5 @@
-﻿#define WIN32_LEAN_AND_MEAN
+﻿// #define PING_KUN_DEBUG 1
+#define WIN32_LEAN_AND_MEAN
 #define _WIN32_WINNT 0x0601
 #include <windows.h>
 #include <shellapi.h>
@@ -30,11 +31,14 @@ static DWORD WINAPI threadFunc(void* param) {
 	Ping target;
 	bool prevSuccess = true;
 	for(;;) {
-//		const auto result = target.ping(address);
-auto result = target.ping(address);
-if(GetAsyncKeyState(VK_SHIFT) & 0x8000) {
-	result = -1;
-}
+#if defined(PING_KUN_DEBUG)
+		auto result = target.ping(address);
+		if(GetAsyncKeyState(VK_SHIFT) & 0x8000) {
+			result = -1;
+		}
+#else
+		const auto result = target.ping(address);
+#endif
 
 		bool update;
 		const bool success = (result >= 0);
