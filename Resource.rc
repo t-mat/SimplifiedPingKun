@@ -1,0 +1,8 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+#include "winres.h"
+IDI_ICON1               ICON                    "resources\\green_32x32.ico"
+IDI_ICON2               ICON                    "resources\\red_32x32.ico"
