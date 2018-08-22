@@ -2,23 +2,33 @@
 
 class TaskTrayNotifyIcon {
 public:
-	TaskTrayNotifyIcon(HWND hWnd, UINT uCallbackMessage, UINT notifyIconUid = 1)
-		: hWnd { hWnd }
+	TaskTrayNotifyIcon(UINT notifyIconUid = 1)
+		: hWnd { nullptr }
 		, notifyIconUid { notifyIconUid }
-	{
+	{}
+
+	~TaskTrayNotifyIcon() {
+		cleanup();
+	}
+
+	void cleanup() {
+		if(!good()) { return; }
+		auto nid = NotifyIconData();
+		Shell_NotifyIconW(NIM_DELETE, &nid);
+		invalidate();
+	}
+
+	void setCallback(HWND hWnd, UINT uCallbackMessage) {
+		this->hWnd = hWnd;
 		auto nid = NotifyIconData(NIF_MESSAGE);
 		nid.uCallbackMessage = uCallbackMessage;
 		Shell_NotifyIconW(NIM_ADD, &nid);
 	}
 
-	~TaskTrayNotifyIcon() {
-		auto nid = NotifyIconData();
-		Shell_NotifyIconW(NIM_DELETE, &nid);
-	}
-
 	using MenuFunc = std::function<void(HMENU)>;
 
 	LRESULT messageHandler(const MenuFunc& menuFunc) const {
+		if(!good()) { return 0; }
 		SetForegroundWindow(hWnd);
 		SetFocus(hWnd);
 		POINT p;
@@ -33,12 +43,14 @@ public:
 	}
 
 	void setIcon(HICON hIcon) const {
+		if(!good()) { return; }
 		auto nid = NotifyIconData(NIF_ICON);
 		nid.hIcon = hIcon;
 		Shell_NotifyIcon(NIM_MODIFY, &nid);
 	}
 
 	void setTipText(const wchar_t* tipText) const {
+		if(!good()) { return; }
 		auto nid = NotifyIconData(NIF_TIP);
 		StringCchCopy(nid.szTip, sizeof(nid.szTip)/sizeof(nid.szTip[0]), tipText);
 		Shell_NotifyIcon(NIM_MODIFY, &nid);
@@ -52,7 +64,15 @@ public:
 		return nid;
 	}
 
+	bool good() const {
+		return hWnd != nullptr;
+	}
+
 protected:
-	const HWND hWnd { nullptr };
-	const UINT notifyIconUid = 1;
+	void invalidate() {
+		hWnd = nullptr;
+	}
+
+	HWND hWnd { nullptr };
+	UINT notifyIconUid = 1;
 };

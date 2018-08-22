@@ -14,19 +14,19 @@
 
 #define L_APPNAME L"PingIndicator"
 
-TaskTrayNotifyIcon* ni = nullptr;
+TaskTrayNotifyIcon ni;
 
 
 static DWORD WINAPI threadFunc(void* param) {
 	const char* address = "8.8.8.8";
-	const int	TimerPeriodInMilliSeconds	= 1 * 1000;	// 30 seconds
+	const int	TimerPeriodInMilliSeconds	= 1 * 1000;
 
 	HINSTANCE const hInstance = GetModuleHandle(NULL);
 	HICON const hGreenIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 	HICON const hRedIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON2));
 
-	ni->setTipText(L_APPNAME);
-	ni->setIcon(hGreenIcon);
+	ni.setTipText(L_APPNAME);
+	ni.setIcon(hGreenIcon);
 
 	Ping target;
 	bool prevSuccess = true;
@@ -40,20 +40,14 @@ static DWORD WINAPI threadFunc(void* param) {
 		const auto result = target.ping(address);
 #endif
 
-		bool update;
 		const bool success = (result >= 0);
-		if(success) {
-			update = !prevSuccess;
-		} else {
-			update = prevSuccess;
-		}
-
+		const bool update = (success != prevSuccess);
 		prevSuccess = success;
 
 		if(update) {
 			if(prevSuccess) {
-				ni->setTipText(L_APPNAME);
-				ni->setIcon(hGreenIcon);
+				ni.setTipText(L_APPNAME);
+				ni.setIcon(hGreenIcon);
 			} else {
 				SYSTEMTIME t;
 				GetLocalTime(&t);
@@ -65,8 +59,8 @@ static DWORD WINAPI threadFunc(void* param) {
 					, L_APPNAME ": First failed %02d/%02d %02d:%02d:%02d"
 					, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond
 				);
-				ni->setTipText(buf);
-				ni->setIcon(hRedIcon);
+				ni.setTipText(buf);
+				ni.setIcon(hRedIcon);
 			}
 		}
 		Sleep(TimerPeriodInMilliSeconds);
@@ -87,7 +81,7 @@ static LRESULT CALLBACK wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		return 0;
 
 	case WM_CREATE:
-		ni = new TaskTrayNotifyIcon(hWnd, WM_MY_TASKTRAY);
+		ni.setCallback(hWnd, WM_MY_TASKTRAY);
 		CreateThread(0, 0, threadFunc, 0, 0, 0);
 		return 0;
 
@@ -98,7 +92,7 @@ static LRESULT CALLBACK wndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 		case WM_LBUTTONUP:
 		case WM_RBUTTONUP:
-			return ni->messageHandler([&](HMENU hMenu) {
+			return ni.messageHandler([&](HMENU hMenu) {
 				AppendMenuW(hMenu, MF_STRING, CM_MY_EXIT, L"Quit");
 			});
 		}
@@ -147,10 +141,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-
-	if(ni != nullptr) {
-		delete ni;
-	}
+	ni.cleanup();
 
 	return 0;
 }
