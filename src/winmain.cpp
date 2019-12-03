@@ -18,7 +18,7 @@ TaskTrayNotifyIcon ni;
 
 
 static DWORD WINAPI threadFunc(void* param) {
-	const char* address = "8.8.8.8";
+	const char* address = "1.0.0.1";
 	const int	TimerPeriodInMilliSeconds	= 1 * 1000;
 
 	HINSTANCE const hInstance = GetModuleHandle(NULL);
@@ -120,6 +120,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		return 0;
 	}
 
+	{
+		WSADATA wsaData;
+		WSAStartup(MAKEWORD(2,2), &wsaData);
+	}
+
 	WNDCLASSW wc {};
 	wc.lpfnWndProc   = wndProc;
 	wc.hInstance     = hInstance;
@@ -141,6 +146,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+	WSACleanup();
 	ni.cleanup();
 
 	return 0;
